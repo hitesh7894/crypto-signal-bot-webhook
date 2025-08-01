@@ -16,7 +16,7 @@ def start(update, context):
 
 def help_cmd(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text='/status – Bot live status
+                             text='/status – Bot live status'
 /lastsignal – Last alert
 /summary – Recent trades
 /market – Live coin summary

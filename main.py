@@ -1,54 +1,56 @@
-import logging
+# main.py
+import os
+import requests
 from flask import Flask, request
-from telegram import Bot, Update
-from telegram.ext import Dispatcher, CommandHandler
-from utils import get_signal_message, get_market_summary
+from signal_generator import get_latest_signal
+from market_utils import get_market_summary
 
-TOKEN = '7612808640:AAEm0j8gL-6dswKPHCSqt7eMi4f0L0tbEys'
-bot = Bot(token=TOKEN)
+TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("OWNER_ID")
+
 app = Flask(__name__)
-dispatcher = Dispatcher(bot=bot, update_queue=None, workers=1, use_context=True)
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+@app.route('/')
+def home():
+    return "✅ Crypto Signal Bot is Live with Webhook!"
 
-def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text='✅ Bot is Active and Monitoring...')
+@app.route(f"/<token>", methods=["POST"])
+def webhook(token):
+    if token != TOKEN:
+        return "Unauthorized", 403
 
-def help_cmd(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text='/status – Bot live status'
-/lastsignal - Last alert
-/summary - Recent trades
-/market - Live coin summary
-'/help - Command list'
+    data = request.get_json()
+    message = data.get("message", {})
+    chat_id = message.get("chat", {}).get("id")
+    text = message.get("text", "")
 
+    if text == "/status":
+        reply = "✅ Bot is Active and Monitoring the Market..."
+    elif text == "/lastsignal":
+        reply = get_latest_signal()
+    elif text == "/market":
+        reply = get_market_summary()
+    elif text == "/help":
+        reply = (
+            "📘 *Crypto Signal Bot Commands:*\n"
+            "/status - Check bot status\n"
+            "/lastsignal - Show last trade signal\n"
+            "/market - Live prices + deviation\n"
+            "/help - Show this help message"
+        )
+    else:
+        reply = "❌ Unknown command. Use /help to see options."
 
-def lastsignal(update, context):
-    msg = get_signal_message()
-    context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode='HTML')
+    send_message(chat_id, reply)
+    return "", 200
 
-def status(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text='✅ Bot is Active and Monitoring...')
+def send_message(chat_id, text):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    requests.post(url, json={
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "Markdown"
+    })
 
-def market(update, context):
-    summary = get_market_summary()
-    context.bot.send_message(chat_id=update.effective_chat.id, text=summary, parse_mode='HTML')
-
-dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_handler(CommandHandler("help", help_cmd))
-dispatcher.add_handler(CommandHandler("lastsignal", lastsignal))
-dispatcher.add_handler(CommandHandler("status", status))
-dispatcher.add_handler(CommandHandler("market", market))
-
-@app.route(f"/{TOKEN}", methods=["POST"])
-def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    dispatcher.process_update(update)
-    return "ok"
-
-@app.route("/")
-def index():
-    return "Crypto Signal Bot is running."
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)

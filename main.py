@@ -20,7 +20,8 @@ def help_cmd(update, context):
 /lastsignal - Last alert
 /summary - Recent trades
 /market - Live coin summary
-/help - Command list')
+'/help - Command list'
+
 
 def lastsignal(update, context):
     msg = get_signal_message()

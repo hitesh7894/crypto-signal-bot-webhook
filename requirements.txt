@@ -1,3 +1,5 @@
 flask
+python-telegram-bot==13.7
 requests
-python-dotenv
+numpy
+pandas

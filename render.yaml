@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: telegram-bot-webhook
+    env: docker
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: OWNER_CHAT_ID
+        sync: false
+      - key: WEBHOOK_SECRET
+        value: myultrasecret # change this

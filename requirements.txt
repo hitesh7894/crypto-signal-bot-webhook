@@ -1,4 +1,4 @@
-python-telegram-bot==13.15
-flask==2.2.5
-requests
-ta
+fastapi
+uvicorn
+httpx
+python-dotenv
